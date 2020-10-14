@@ -1,0 +1,113 @@
+{#
+/* 
+ * Copyright (C) 2020 j
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#}
+{% extends '@Core/Master/MenuTemplate.html.twig' %}
+
+{% block css %}
+    {{ parent() }}
+    <style>
+    /* dark mode theme css code */
+        html.darkTheme {
+            filter: invert(1) hue-rotate(180deg);
+        }
+        /* avoid inverting some elements (by inverting twice an element it remains uninverted) */
+        html.darkTheme body > nav, /* don't invert main nav */
+        html.darkTheme img:not([alt="FacturaScripts"]) { /* don't invert images */
+            /* :not([alt="FacturaScripts"]) is used to exclude the logo because it is already part of the main nav */
+            filter: invert(1) hue-rotate(180deg);
+        }
+        html.darkTheme body,
+        html.darkTheme .bg-header  {
+            background-color: #eee;
+        }
+        html.darkTheme div .card,
+        html.darkTheme #mainTabsContent,
+        html.darkTheme #mainTabs > li > a.active{
+            background-color: #ddd;
+        }
+        html.darkTheme #mainTabs > li > a.active{
+            border-bottom: 1px solid #ddd;
+        }
+
+    /* light mode theme css code. Slightly modifies the original FS appearence */
+        html.lightTheme {
+            filter: initial;
+        }
+        html.lightTheme  body > nav{
+            filter: initial;
+        }
+        /* html.lightTheme body,
+        html.lightTheme .bg-header {
+            background-color: #f8f9fa;
+        }*/
+        html.lightTheme div .card,
+        html.lightTheme #mainTabsContent,
+        html.lightTheme #mainTabs > li > a.active{
+            background-color: #eee; /* #f8f9fa = bg-light from bootstrap 4 */
+        }
+        html.lightTheme #mainTabs > li > a.active{
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+{% endblock %}
+
+{% block navbar %}
+    {{ parent() }}
+    
+    <input type="hidden" id="currentDarkModeState" value="{{ appSettings.get('darkModePrefs', fsc.user.nick) }}">
+    
+    <script type="text/javascript">
+        $(document).ready(function (){
+            // inject icon in nav for darkmode toggle
+            injectIconDarkmodeToggle();
+            
+            // switch dark mode on or off depending on user's current preference
+            switchDarkMode(document.getElementById('currentDarkModeState').value);
+        });
+        
+        function injectIconDarkmodeToggle(){
+            var html = `
+                        <li class="nav-item" title="Dark Mode on/off">
+                            <a class="nav-link" href="#" onclick="toggleDarkMode();">
+                                <i class="fas fa-adjust" aria-hidden="true"></i> <!-- or "fas fa-moon" -->
+                            </a>
+                        </li>`;
+            $('body > nav > div > ul.ml-auto').prepend(html);
+        }
+        
+        function toggleDarkMode(){
+            // apply visually the opposite of the current state and save the new state
+            let currentState = $('#currentDarkModeState').val(); // hidden input
+            let newState = (currentState === 'on') ? 'off' : 'on';
+            switchDarkMode(newState);
+            $.get("DarkMode?saveDarkModeState=" + newState); // update user preference in database
+            $('#currentDarkModeState').val(newState); // update new state in DOM
+        }
+
+        function switchDarkMode(state){
+            if (state === 'on'){ // switch dark theme on
+                $('html').removeClass('lightTheme');
+                $('html').addClass('darkTheme');
+            }else if (state === 'off'){ // switch dark theme off
+                $('html').removeClass('darkTheme');
+                $('html').addClass('lightTheme');
+            }
+        }
+        
+    </script>
+{% endblock %}
